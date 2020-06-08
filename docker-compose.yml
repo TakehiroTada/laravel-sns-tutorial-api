@@ -1,0 +1,50 @@
+version: '3.3'
+
+services:
+  sns-api-nginx:
+    image: nginx:1.18.0-alpine
+    depends_on:
+      - sns-api-app
+    container_name: sns-api-nginx
+    ports:
+      - 80:80
+    volumes:
+      - ./.docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./:/var/www/html
+  sns-api-app:
+    build: ./.docker/php-fpm
+    container_name: sns-api-app
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - sns-api-db
+  sns-api-db:
+    image: mysql:5.7
+    command:
+      - --sql-mode=NO_ENGINE_SUBSTITUTION
+    container_name: sns-api-db
+    ports:
+      - 5000:3306
+    environment:
+      - MYSQL_DATABASE=tada_laravel_tutorial
+      - MYSQL_USER=mysql
+      - MYSQL_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=password
+    volumes:
+      - ./.docker/mysql/etc-mysql.cnf:/etc/mysql/conf.d/etc-mysql.cnf
+      - ./.docker/mysql/init:/docker-entrypoint-initdb.d
+  sns-api-minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+    command: [server, /data]
+    volumes:
+      - ./.docker/minio/data:/data:delegated
+    environment:
+      MINIO_ACCESS_KEY: access_key
+      MINIO_SECRET_KEY: access_secret
+volumes:
+  sns-api-db-data:
+    driver: local
+  sns-api-minio-data:
+    driver: local
