@@ -20,6 +20,7 @@ add('shared_dirs', ['vendor']);
 add('writable_dirs', ['bootstrap/cache', 'storage']);
 
 set('slack_webhook', 'https://hooks.slack.com/services/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');
+set('composer_options', 'install --verbose --prefer-dist --no-progress --no-interaction --optimize-autoloader');
 
 # -----------------------------------------------------------
 # Hosts
