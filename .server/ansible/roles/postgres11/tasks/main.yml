@@ -1,0 +1,48 @@
+---
+# @memo Amazon Linux 2 専用コマンド amazon-linux-extras 利用
+
+# install with
+# postgresql
+# - postgresql-libs
+- name: install postgresql11 from amazon-linux-extras
+  command: amazon-linux-extras install postgresql11
+
+- name: 拡張モジュールのインストール
+  yum: name={{ item }} enablerepo=amzn2extra-postgresql11 state=present
+  with_items:
+  - postgresql-devel
+  # - postgresql-server
+  - postgresql-contrib
+
+- block:
+  # 自動起動の設定
+  - name: enable postgresql11
+    service: name=postgresql enabled=yes
+
+  # 設定済みかの確認
+  - name: check postgresql.conf
+    command: test -f "/var/lib/pgsql/data/postgresql.conf"
+    register: result
+    ignore_errors: true
+
+  # 初期化
+  - name: initdb
+    become_user: postgres
+    command: /bin/initdb -D /var/lib/pgsql/data --no-locale -E UTF8
+    when: result|failed
+  - name: config pg_hba.conf
+    copy: src=pg_hba.conf dest=/var/lib/pgsql/data/pg_hba.conf owner=postgres group=postgres
+    when: result|failed
+  - name: config postgresql.conf
+    copy: src=postgresql.conf dest=/var/lib/pgsql/data/postgresql.conf owner=postgres group=postgres
+    when: result|failed
+
+  # サービス起動
+  - name: start postgresql11
+    service: name=postgresql state=started
+
+  # postgresユーザのパスワード初期化
+  - name: config postgres password
+    command: /usr/bin/psql -U postgres -c "ALTER USER postgres with password '{{ db_password }}';"
+    when: result|failed
+  when: stage == 'development'

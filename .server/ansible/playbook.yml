@@ -11,5 +11,6 @@
     domain: ec2-52-198-195-60.ap-northeast-1.compute.amazonaws.com
   roles:
     - common
+    - postgres11
     - nginx
     - php74
