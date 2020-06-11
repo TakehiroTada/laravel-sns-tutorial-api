@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 */
 
 Route::group(
+    [],
     function () {
         Route::prefix('auth')->group(
             function () {
@@ -24,9 +25,11 @@ Route::group(
 );
 
 Route::middleware(['auth:api'])->group(
+    [],
     function () {
         Route::resource('users', 'UserController', ['except' => ['create', 'edit']]);
         Route::prefix('auth')->group(
+            [],
             function () {
                 Route::post('logout', 'AuthController@logout');
                 Route::post('refresh', 'AuthController@refresh');
