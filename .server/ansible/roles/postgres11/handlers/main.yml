@@ -1,0 +1,5 @@
+- name: restart postgresql11 service
+  systemd: name=postgresql-11 state=restarted
+
+- name: reload postgresql11 service
+  systemd: name=postgresql-11 state=reloaded

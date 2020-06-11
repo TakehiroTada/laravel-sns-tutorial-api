@@ -1,48 +1,91 @@
 ---
-# @memo Amazon Linux 2 専用コマンド amazon-linux-extras 利用
+# 参考
+# https://qiita.com/umi-kaze/items/f2ef8279bad04b5af3b4
+# https://qiita.com/tmiki/items/00d22edc6a554f61bd04
 
-# install with
-# postgresql
-# - postgresql-libs
-- name: install postgresql11 from amazon-linux-extras
-  command: amazon-linux-extras install postgresql11
+- name: 変数読み込み
+  include_vars:
+    file: "{{stage}}.yml"
 
-- name: 拡張モジュールのインストール
-  yum: name={{ item }} enablerepo=amzn2extra-postgresql11 state=present
-  with_items:
-  - postgresql-devel
-  # - postgresql-server
-  - postgresql-contrib
+- name: postgresql9.2が存在するかチェック
+  shell: cd; bash -lc "yum list installed | grep postgresql.x86_64 | wc -l"
+  register: psql92_is_installed
 
-- block:
-  # 自動起動の設定
-  - name: enable postgresql11
-    service: name=postgresql enabled=yes
+- name: postgresql9.2を削除
+  when: '"0" not in psql92_is_installed.stdout'
+  yum:
+    name: "{{ packages }}"
+    state: removed
+  vars:
+    packages:
+    - postgresql
+    - postgresql-devel
+    - postgresql-libs
 
-  # 設定済みかの確認
-  - name: check postgresql.conf
-    command: test -f "/var/lib/pgsql/data/postgresql.conf"
-    register: result
-    ignore_errors: true
+- name: リポジトリ登録(1/2)
+  command: "rpm -ivh --nodeps https://yum.postgresql.org/11/redhat/rhel-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+  args:
+    creates: /etc/yum.repos.d/pgdg-redhat-all.repo
+    warn: no
 
-  # 初期化
-  - name: initdb
-    become_user: postgres
-    command: /bin/initdb -D /var/lib/pgsql/data --no-locale -E UTF8
-    when: result|failed
-  - name: config pg_hba.conf
-    copy: src=pg_hba.conf dest=/var/lib/pgsql/data/pg_hba.conf owner=postgres group=postgres
-    when: result|failed
-  - name: config postgresql.conf
-    copy: src=postgresql.conf dest=/var/lib/pgsql/data/postgresql.conf owner=postgres group=postgres
-    when: result|failed
+- name: リポジトリ登録(2/2)
+  replace: dest=/etc/yum.repos.d/pgdg-redhat-all.repo regexp='\$releasever' replace='7'
 
-  # サービス起動
-  - name: start postgresql11
-    service: name=postgresql state=started
+- name: postgresql11インストール
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - postgresql11
+    # - postgresql11-devel
+    - postgresql11-libs
+    - postgresql11-server
 
-  # postgresユーザのパスワード初期化
-  - name: config postgres password
-    command: /usr/bin/psql -U postgres -c "ALTER USER postgres with password '{{ db_password }}';"
-    when: result|failed
-  when: stage == 'development'
+- name: Group作成
+  group:
+    name: "{{ pg_group}}"
+- name: User作成
+  user:
+    name: "{{ pg_owner }}"
+    group: "{{ pg_group }}"
+
+- name: DB初期化
+  command: "/usr/pgsql-11/bin/postgresql-11-setup initdb"
+  environment:
+    PGSETUP_INITDB_OPTIONS: '--encoding=UTF-8 --locale=C'
+  args:
+    creates: "{{ directory_pgdata }}/data/PG_VERSION"
+    warn: no
+
+- name: PGDATAとPGLOGの設定
+  template: src=postgresql.j2 dest=/etc/sysconfig/pgsql/postgresql owner=root group=root
+
+- name: DB起動, 自動起動設定
+  systemd:
+    name: postgresql-11
+    enabled: yes
+    state: started
+
+- name: remote_tmp作成
+  file: path=/var/lib/pgsql/.ansible/tmp state=directory owner=postgres group=postgres mode=700
+
+# 冪等性を守ろうとすると手間がかかりすぎるので諦めたところ。
+# 初回以外はここをコメントアウト
+# - name: postgresqlユーザーのpassword設定
+#   become: yes
+#   become_user: "{{ pg_owner }}"
+#   command: /usr/bin/psql -U postgres -c "ALTER USER postgres with PASSWORD '{{pg_password}}';"
+
+- name: パスワード省略のためpgpassファイルを設定
+  template: src=.pgpass.j2 dest=/home/ec2-user/.pgpass mode=600 owner=ec2-user group=ec2-user
+
+- name: postgresql.confを配置
+  copy: src=postgresql.conf dest={{ directory_pgdata }}/data/postgresql.conf
+  notify:
+    restart postgresql11 service
+
+- name: pg_hba.confを配置
+  copy: src=pg_hba.conf dest={{ directory_pgdata }}/data/pg_hba.conf
+  notify:
+    reload postgresql11 service

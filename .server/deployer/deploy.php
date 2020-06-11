@@ -11,7 +11,7 @@ require 'recipe/slack.php';
 # -----------------------------------------------------------
 # Configurate
 
-set('application', 'ec2-52-198-195-60.ap-northeast-1.compute.amazonaws.com');
+set('application', 'ec2-13-230-250-27.ap-northeast-1.compute.amazonaws.com');
 set('repository', 'git@github.com:/takenyan-tech/laravel-sns-tutorial-api.git');
 set('git_tty', true);
 
@@ -25,7 +25,7 @@ set('composer_options', 'install --verbose --prefer-dist --no-progress --no-inte
 # -----------------------------------------------------------
 # Hosts
 
-host('52.198.195.60')
+host('13.230.250.27')
     ->set('deploy_path', '/var/www/html')
     ->user('fusic')
     ->identityFile('./miria.rsa')
