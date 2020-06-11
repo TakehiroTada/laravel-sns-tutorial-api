@@ -1,0 +1,8 @@
+Host github.com
+  User miriaakagi
+  Port 22
+  Hostname github.com
+  IdentityFile ~/.ssh/miria_akagi_id_rsa
+  TCPKeepAlive yes
+  IdentitiesOnly yes
+  StrictHostKeyChecking no

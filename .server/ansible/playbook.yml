@@ -1,0 +1,16 @@
+---
+- name: ec2-13-230-250-27.ap-northeast-1.compute.amazonaws.com
+  hosts: all
+  become: yes
+  user: ec2-user
+  vars:
+    main_username: fusic
+    main_password: fusic
+    stage: production
+    docroot: /var/www/html/htdocs/current/public
+    domain: ec2-13-230-250-27.ap-northeast-1.compute.amazonaws.com
+  roles:
+    - common
+    - postgres11
+    - nginx
+    - php74

@@ -1,0 +1,231 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Tada Laravel Tutorial Production(EC2 S3 RDS)
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "Project Name Prefix"
+        Parameters:
+          - PJPrefix
+      - Label:
+          default: "Select Zone"
+        Parameters:
+          - AvailabilityZone1a
+      - Label:
+          default: "Project EC2 KeyPair"
+        Parameters:
+          - KeyName
+      - Label:
+          default: "Network Configuration"
+        Parameters:
+          - VPCCIDR
+          - FusicIP
+          - PublicSubnetACIDR
+    ParameterLabels:
+      VPCCIDR:
+        default: "VPC CIDR"
+      FusicIP:
+        default: "Fusic IP"
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------#
+Parameters:
+  PJPrefix:
+    Type: String
+
+  KeyName:
+    Description: input EC2 Keyname
+    Type: "AWS::EC2::KeyPair::KeyName"
+
+  Ec2ImageId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  VPCCIDR:
+    Type: String
+    AllowedValues: ["10.1.0.0/16"]
+    Default: "10.1.0.0/16"
+
+  FusicIP:
+    Type: String
+    AllowedValues: ["116.94.0.124/32"]
+    Default: "116.94.0.124/32"
+
+  PublicSubnetACIDR:
+    Type: String
+    AllowedValues: ["10.1.10.0/24"]
+    Default: "10.1.10.0/24"
+
+  AvailabilityZone1a:
+    Description: Please input Availability Zone
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: ap-northeast-1a
+
+Resources:
+  # ------------------------------------------------------------#
+  #  VPC
+  # ------------------------------------------------------------#
+  # VPC Create
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: !Ref VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub "${PJPrefix}-vpc"
+
+  # InternetGateway Create
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${PJPrefix}-igw"
+
+  # IGW Attach
+  InternetGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  # ------------------------------------------------------------#
+  #  Subnet
+  # ------------------------------------------------------------#
+  # Public SubnetA Create
+  PublicSubnetA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone1a
+      CidrBlock: !Ref PublicSubnetACIDR
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${PJPrefix}-public-subnet-a"
+  # ------------------------------------------------------------#
+  #  RouteTable
+  # ------------------------------------------------------------#
+  # Public RouteTableA Create
+  PublicRouteTableA:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${PJPrefix}-public-route-a"
+
+  # ------------------------------------------------------------#
+  # Routing
+  # ------------------------------------------------------------#
+  # PublicRouteA Create
+  PublicRouteA:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  # ------------------------------------------------------------#
+  # RouteTable Associate
+  # ------------------------------------------------------------#
+  # PublicRouteTable Associate SubnetA
+  PublicSubnetARouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTableA
+
+  # ------------------------------------------------------------#
+  #  EC2
+  # ------------------------------------------------------------#
+  # SecurityGroup for EC2
+  EC2SecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: "-"
+      # Rule
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref FusicIP
+
+  # Elastic IP
+  ElasticIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: vpc
+
+  # EC2 Instance
+  EC2:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeType: "gp2"
+            VolumeSize: 10
+      ImageId: !Ref Ec2ImageId
+      # シャットダウン時の動作
+      InstanceInitiatedShutdownBehavior: "stop"
+      # インスタンスタイプ
+      InstanceType: "t2.micro"
+      # キーペア
+      KeyName: !Ref KeyName
+      # 詳細モニタリング設定
+      Monitoring: false
+      # セキュリティグループ
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
+      # サブネット
+      SubnetId: !Ref PublicSubnetA
+      # テナンシー
+      Tenancy: "default"
+      # タグ
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${PJPrefix}-vpc"
+
+  # Atacch EIP
+  IPAssoc:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref EC2
+      EIP: !Ref ElasticIP
+
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#
+Outputs:
+  # VPC
+  VPC:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${PJPrefix}-vpc"
+
+  VPCCIDR:
+    Value: !Ref VPCCIDR
+    Export:
+      Name: !Sub "${PJPrefix}-vpc-cidr"
+
+  # Subnet
+  PublicSubnetA:
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: !Sub "${PJPrefix}-public-subnet-a"
+
+  PublicSubnetACIDR:
+    Value: !Ref PublicSubnetACIDR
+    Export:
+      Name: !Sub "${PJPrefix}-public-subnet-a-cidr"
+
+  # Route
+  PublicRouteTableA:
+    Value: !Ref PublicRouteTableA
+    Export:
+      Name: !Sub "${PJPrefix}-public-route-a"
