@@ -1,0 +1,58 @@
+---
+# @memo Amazon Linux 2 SELinuxがデフォルトでDisable
+# userを追加
+- name: useradd main_username
+  user: name={{ main_username }} password={{ main_password }}
+
+- name: 追加したユーザーを sudoer とする
+  template: src=sudoer.j2 dest=/etc/sudoers.d/{{ main_username }}
+
+- name: 追加ユーザーの .ssh ディレクトリを作成する
+  file: dest=/home/{{ main_username }}/.ssh state=directory owner={{ main_username }} group={{ main_username }} mode=700
+
+- name: 追加ユーザーの公開鍵を設置する
+  copy: src={{ public_key_path }} dest=/home/{{ main_username }}/.ssh/authorized_keys owner={{ main_username }} group={{ main_username }} mode=600
+
+- name: githubへの接続情報を設置
+  copy: src=ssh_config dest=/home/{{ main_username }}/.ssh/config owner={{ main_username }} group={{ main_username }} mode=600
+- name: miriaの秘密鍵を設置
+  copy: src={{ private_key_path }} dest=/home/{{ main_username }}/.ssh/github_fusicman_id_rsa owner={{ main_username }} group={{ main_username }} mode=600
+
+# パッケージを更新
+- name: yum update
+  command: yum -y update
+
+# ntpをインストール
+- name: install ntp
+  yum: name=ntp state=present
+- name: enable ntp
+  service: name=ntpd enabled=yes
+- name: stop ntpd
+  service: name=ntpd state=stopped
+- name: change ntp.conf
+  copy: src=ntp.conf dest=/etc/ntp.conf owner=root group=root
+- name: sync ntp.nict.jp
+  command: /usr/sbin/ntpdate ntp.nict.jp
+
+# Timezone設定
+- name: set timezone to Asia/Tokyo
+  timezone:
+    name: Asia/Tokyo
+
+# 不要なサービスの停止と自動起動をオフに
+# @memo Amazon Linux 2 にはfirewalldがない（Security Group利用前提
+- name: stop services
+  ignore_errors: true
+  service: name={{ item }} state=stopped
+  with_items:
+    - postfix
+
+# 色々パッケージを追加
+- name: install packages
+  yum: name={{ item }} state=present
+  with_items:
+    - zip
+    - unzip
+    - wget
+    - git
+    - vim
