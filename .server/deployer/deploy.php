@@ -29,7 +29,7 @@ host('52.198.195.60')
     ->user('fusic')
     ->identityFile('./miria.rsa')
     ->stage('production')
-    ->set('branch', 'master');
+    ->set('branch', 'deloy-settings');
 
 # -----------------------------------------------------------
 # Tasks
