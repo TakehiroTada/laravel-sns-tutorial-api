@@ -1,0 +1,10 @@
+---
+# 追加するユーザ名
+main_username: fusic
+# 追加するユーザのパスワード
+main_password: fusic
+
+# public key
+public_key_path: /home/take/.ssh/miria/id_rsa.pub
+# private key
+private_key_path: /home/take/.ssh/miria/id_rsa

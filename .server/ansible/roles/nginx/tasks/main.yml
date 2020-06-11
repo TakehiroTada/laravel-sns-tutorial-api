@@ -1,0 +1,27 @@
+---
+- name: レポジトリの追加
+  copy: src=nginx.repo dest=/etc/yum.repos.d/nginx.repo owner=root group=root mode=0644
+
+- name: nginxのインストール
+  yum: name=nginx enablerepo=nginx state=present
+
+- name: default.confの退避
+  command: mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/_default.conf.bak removes=/etc/nginx/conf.d/default.conf
+
+- name: nginx.confファイルの設置
+  copy: src=nginx.conf dest=/etc/nginx/nginx.conf owner=root group=root mode=0644
+  notify:
+  - restart nginx
+
+# - name: 証明書類の設置
+#   copy: src=certs/ dest=/etc/nginx/certs/ owner=root group=root mode=0644
+#   notify:
+#   - restart nginx
+
+- name: アプリサーバ用設定ファイルの設置
+  copy: src=web.conf dest=/etc/nginx/conf.d/web.conf owner=root group=root mode=0644
+  notify:
+  - restart nginx
+
+- name: 自動起動オン
+  service: name=nginx enabled=yes

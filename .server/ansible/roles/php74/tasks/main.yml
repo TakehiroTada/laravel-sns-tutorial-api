@@ -1,0 +1,37 @@
+
+---
+# @memo Amazon Linux 2 専用コマンド amazon-linux-extras 利用
+
+- name: install php7.4 from amazon-linux-extras
+  command: amazon-linux-extras install php7.4 -y
+
+# PHP/モジュールのインストール
+- name: install php7.4 modules
+  yum: name={{ item }} state=present
+  with_items:
+  - php
+  - php-pear
+  - php-devel
+  - php-xml
+  - php-mbstring
+  - php-gd
+  - php-pgsql
+  - php-intl
+  - php-opcache
+  - php-pdo
+  - php-common
+  - php-json
+  - php-cli
+  - php-zip
+  - php-process
+
+# ここから https://gist.github.com/debility/8838906 を反映
+- name: config PHP
+  copy: src=99-my.ini dest=/etc/php.d/99-my.ini
+# ここまで https://gist.github.com/debility/8838906 を反映
+
+- name: config OPCache
+  lineinfile: dest=/etc/php.d/10-opcache.ini regexp="opcache\.enable_cli=" line="opcache.enable_cli=1"
+
+- name: nginxを起動する
+  service: name=nginx state=started

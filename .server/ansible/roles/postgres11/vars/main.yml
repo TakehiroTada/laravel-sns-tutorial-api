@@ -1,0 +1,4 @@
+---
+pg_owner: postgres
+pg_group: postgres
+directory_pgdata: /var/lib/pgsql/11
