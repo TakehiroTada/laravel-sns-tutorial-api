@@ -16,7 +16,7 @@
 - name: githubへの接続情報を設置
   copy: src=ssh_config dest=/home/{{ main_username }}/.ssh/config owner={{ main_username }} group={{ main_username }} mode=600
 - name: miriaの秘密鍵を設置
-  copy: src={{ private_key_path }} dest=/home/{{ main_username }}/.ssh/github_fusicman_id_rsa owner={{ main_username }} group={{ main_username }} mode=600
+  copy: src={{ private_key_path }} dest=/home/{{ main_username }}/.ssh/miria_akagi_id_rsa owner={{ main_username }} group={{ main_username }} mode=600
 
 # パッケージを更新
 - name: yum update
