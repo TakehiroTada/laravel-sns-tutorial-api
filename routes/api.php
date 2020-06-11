@@ -14,31 +14,24 @@ use Illuminate\Http\Request;
 */
 
 Route::group(
-    [
-    'prefix' => 'auth'
-    ],
     function () {
-        Route::post('login', 'AuthController@login');
+        Route::prefix('auth')->group(
+            function () {
+                Route::post('login', 'AuthController@login');
+            }
+        );
     }
 );
 
-Route::group(
-    [
-    'prefix' => 'auth',
-    'middleware' => 'auth:api'
-    ],
-    function () {
-        Route::post('logout', 'AuthController@logout');
-        Route::post('refresh', 'AuthController@refresh');
-        Route::post('me', 'AuthController@me');
-    }
-);
-
-Route::group(
-    [
-    'middleware' => 'auth:api'
-    ],
+Route::middleware(['auth:api'])->group(
     function () {
         Route::resource('users', 'UserController', ['except' => ['create', 'edit']]);
+        Route::prefix('auth')->group(
+            function () {
+                Route::post('logout', 'AuthController@logout');
+                Route::post('refresh', 'AuthController@refresh');
+                Route::post('me', 'AuthController@me');
+            }
+        );
     }
 );
