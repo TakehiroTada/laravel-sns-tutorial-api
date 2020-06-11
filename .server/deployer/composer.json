@@ -1,0 +1,17 @@
+{
+  "name": "laravel/deployer",
+  "description": "laravel/deployer",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+  },
+  "require-dev": {
+    "deployer/deployer": "^6.8",
+    "deployer/recipes": "^6.2"
+  },
+  "suggest": {
+  },
+  "autoload": {
+      "classmap": []
+  }
+}
