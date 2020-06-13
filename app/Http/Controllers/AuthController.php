@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\User;
 
 /**
  * AuthController
@@ -19,7 +21,7 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register']]);
     }
 
     /**
@@ -58,6 +60,43 @@ class AuthController extends Controller
         auth()->logout();
 
         return response()->json(['message' => 'Successfully logged out']);
+    }
+
+    /**
+     * register ユーザーの登録
+     *
+     * @param  mixed $request
+     * @return void
+     */
+    public function register(Request $request)
+    {
+        $user = new User;
+        $user->account_id = $request->account_id;
+        $user->email = $request->email;
+        $user->password = bcrypt($request->account_id);
+        $user->last_name = $request->last_name;
+        $user->first_name = $request->first_name;
+        $user->last_name_kana = $request->last_name_kana;
+        $user->first_name_kana = $request->first_name_kana;
+        $user->save();
+        return response()->json(
+            [
+            'message' => 'User created successfully',
+            'data' => $user
+            ], 201, [], JSON_UNESCAPED_UNICODE
+        );
+    }
+
+    /**
+     * update【WIP】
+     *
+     * @param  mixed $request
+     * @param  mixed $id
+     * @return void
+     */
+    public function update(Request $request, $id)
+    {
+        //
     }
 
     /**

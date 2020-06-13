@@ -16,12 +16,14 @@ use Illuminate\Http\Request;
 Route::prefix('auth')->group(
     function () {
         Route::post('login', 'AuthController@login');
+        Route::post('register', 'AuthController@register');
+        Route::post('update', 'AuthController@update');
     }
 );
 
 Route::middleware(['auth:api'])->group(
     function () {
-        Route::resource('users', 'UserController', ['except' => ['create', 'edit']]);
+        Route::resource('users', 'UserController', ['except' => ['create', 'edit', 'store', 'update', 'destroy']]);
         Route::prefix('auth')->group(
             function () {
                 Route::post('logout', 'AuthController@logout');
