@@ -14,7 +14,7 @@ class UserController extends Controller
 {
 
     /**
-     * index
+     * index ユーザー一覧の取得
      *
      * @return void
      */
@@ -26,7 +26,7 @@ class UserController extends Controller
     }
 
     /**
-     * store【WIP】
+     * store ユーザーの登録
      *
      * @param  mixed $request
      * @return void
@@ -34,10 +34,15 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $user = new User;
-        // $article->title = $request->title;
-        // $article->body = $request->body;
-        // $article->save();
-        // return redirect('api/articles');
+        $user->account_id = $request->account_id;
+        $user->email = $request->email;
+        $user->password = bcrypt($request->account_id);
+        $user->last_name = $request->last_name;
+        $user->first_name = $request->first_name;
+        $user->last_name_kana = $request->last_name_kana;
+        $user->first_name_kana = $request->first_name_kana;
+        $user->save();
+        return redirect('api/articles');
     }
 
     /**
