@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Requests\UserRequest;
 use App\User;
 
 /**
@@ -94,9 +95,22 @@ class AuthController extends Controller
      * @param  mixed $id
      * @return void
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        //
+        $user = auth()->user();
+        $user->password = bcrypt($request->account_id);
+        $user->last_name = $request->last_name;
+        $user->first_name = $request->first_name;
+        $user->last_name_kana = $request->last_name_kana;
+        $user->first_name_kana = $request->first_name_kana;
+        $user->update();
+        return response()->json(
+            [
+            'message' => 'User updated successfully',
+            'data' => $user
+            ], 201, [], JSON_UNESCAPED_UNICODE
+        );
+
     }
 
     /**
