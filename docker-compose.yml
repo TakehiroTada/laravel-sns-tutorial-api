@@ -26,7 +26,7 @@ services:
     ports:
       - 5000:3306
     environment:
-      - MYSQL_DATABASE=tada_laravel_tutorial
+      - MYSQL_DATABASE=laravel_sns_tutorial_api_development
       - MYSQL_USER=mysql
       - MYSQL_PASSWORD=password
       - MYSQL_ROOT_PASSWORD=password

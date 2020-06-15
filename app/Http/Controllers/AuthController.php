@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\User;
+use Exception;
 
 /**
  * AuthController
@@ -33,7 +34,7 @@ class AuthController extends Controller
     {
         $credentials = request(['email', 'password']);
 
-        if (! $token = auth()->attempt($credentials)) {
+        if (!$token = auth()->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
@@ -71,20 +72,28 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $user = new User;
-        $user->account_id = $request->account_id;
-        $user->email = $request->email;
-        $user->password = bcrypt($request->account_id);
-        $user->last_name = $request->last_name;
-        $user->first_name = $request->first_name;
-        $user->last_name_kana = $request->last_name_kana;
-        $user->first_name_kana = $request->first_name_kana;
-        $user->save();
-        return response()->json(
-            [
-            'message' => 'User created successfully',
-            'data' => $user
-            ], 201, [], JSON_UNESCAPED_UNICODE
-        );
+        try {
+            $user = User::create($request->all());
+
+            return response()->json(
+                [
+                    'message' => 'User created successfully',
+                    'data' => $user
+                ],
+                201,
+                [],
+                JSON_UNESCAPED_UNICODE
+            );
+        } catch (Exception $e) {
+            return response()->json(
+                [
+                    'message' => 'User create failed',
+                ],
+                500,
+                [],
+                JSON_UNESCAPED_UNICODE
+            );
+        }
     }
 
     /**
@@ -96,19 +105,33 @@ class AuthController extends Controller
      */
     public function update(Request $request)
     {
-        $user = auth()->user();
-        $user->password = bcrypt($request->account_id);
-        $user->last_name = $request->last_name;
-        $user->first_name = $request->first_name;
-        $user->last_name_kana = $request->last_name_kana;
-        $user->first_name_kana = $request->first_name_kana;
-        $user->update();
-        return response()->json(
-            [
-            'message' => 'User updated successfully',
-            'data' => $user
-            ], 201, [], JSON_UNESCAPED_UNICODE
-        );
+        try {
+            $user = auth()->user();
+            $user->password = bcrypt($request->account_id);
+            $user->last_name = $request->last_name;
+            $user->first_name = $request->first_name;
+            $user->last_name_kana = $request->last_name_kana;
+            $user->first_name_kana = $request->first_name_kana;
+            $user->update();
+            return response()->json(
+                [
+                'message' => 'User updated successfully',
+                'data' => $user
+                ],
+                200,
+                [],
+                JSON_UNESCAPED_UNICODE
+            );
+        } catch (Exception $e) {
+            return response()->json(
+                [
+                'message' => 'User update failed',
+                ],
+                500,
+                [],
+                JSON_UNESCAPED_UNICODE
+            );
+        }
 
     }
 
@@ -133,9 +156,9 @@ class AuthController extends Controller
     {
         return response()->json(
             [
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'expires_in' => auth()->factory()->getTTL() * 60
             ]
         );
     }
