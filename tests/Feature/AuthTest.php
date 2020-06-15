@@ -32,7 +32,9 @@ class AuthTest extends TestCase
     {
         $this->createApplication();
         $normalCase = factory(User::class)->make()->toArray();
+        $normalCase['password'] = 'password';
         $abnormalCase = factory(User::class)->make(['account_id'=> null]);
+        $abnormalCase['password'] = 'password';
 
         return[
             [$normalCase, 201],
