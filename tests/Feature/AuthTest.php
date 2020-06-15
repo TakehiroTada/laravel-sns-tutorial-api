@@ -27,9 +27,9 @@ class AuthTest extends TestCase
      * testLogin
      *
      * @dataProvider loginDataProvider
-     * @param  mixed $expect
-     * @param  mixed $responseCode
-     * @return void
+     * @param        mixed $expect
+     * @param        mixed $responseCode
+     * @return       void
      */
     public function testLogin($expect, $responseCode): void
     {
@@ -38,12 +38,27 @@ class AuthTest extends TestCase
     }
 
     /**
+     * testLogout
+     *
+     * @dataProvider logoutDataProvider
+     * @param        mixed $expect
+     * @param        mixed $responseCode
+     * @return       void
+     */
+    public function testLogout($token, $responseCode): void
+    {
+        $this->withHeader('Authorization', "Bearer {$token}");
+        $response = $this->post('/api/auth/logout');
+        $response->assertStatus($responseCode);
+    }
+
+    /**
      * testMe
      *
      * @dataProvider meDataProvider
-     * @param  mixed $token
-     * @param  mixed $expect
-     * @return void
+     * @param        mixed $token
+     * @param        mixed $expect
+     * @return       void
      */
     public function testMe($token, $expect): void
     {
@@ -68,6 +83,38 @@ class AuthTest extends TestCase
     }
 
     /**
+     * testRefresh
+     *
+     * @dataProvider refreshDataProvider
+     * @param        mixed $token
+     * @param        mixed $responseCode
+     * @return       void
+     */
+    public function testRefresh($token, $responseCode): void
+    {
+        $this->withHeader('Authorization', "Bearer {$token}");
+        $response = $this->post('/api/auth/refresh');
+
+        $response->assertStatus($responseCode);
+    }
+
+    /**
+     * testUpdate
+     *
+     * @dataProvider updateDataProvider
+     * @param        mixed $token
+     * @param        mixed $expect
+     * @return       void
+     */
+    public function testUpdate($token, $expect): void
+    {
+        $this->withHeader('Authorization', "Bearer {$token}");
+        $response = $this->put('/api/auth/update', $expect);
+
+        $response->assertJsonFragment($expect);
+    }
+
+    /**
      * loginDataProvider
      *
      * @return array
@@ -84,6 +131,22 @@ class AuthTest extends TestCase
         return [
             [$normalCase, 200],
             [$abnormalCase, 401]
+        ];
+    }
+
+    /**
+     * logoutDataProvider
+     *
+     * @return array
+     */
+    public function logoutDataProvider(): array
+    {
+        $user = User::find(1);
+        $token = JWTAuth::fromUser($user);
+        $wrongToken = "hogehogehogehgoehogehogehogehogehogehogehoge";
+        return [
+            [$token, 200],
+            [$wrongToken, 401]
         ];
     }
 
@@ -127,6 +190,49 @@ class AuthTest extends TestCase
         return [
             [$normalCase, 201],
             [$abnormalCase->toArray(), 500]
+        ];
+    }
+
+    /**
+     * refreshDataProvider
+     *
+     * @return array
+     */
+    public function refreshDataProvider(): array
+    {
+        $user = User::find(1);
+        $token = JWTAuth::fromUser($user);
+        $wrongToken = "hogehogehogehgoehogehogehogehogehogehogehoge";
+        return [
+            [$token, 200],
+            [$wrongToken, 401]
+        ];
+    }
+
+    /**
+     * updateDataProvider
+     *
+     * @return array
+     */
+    public function updateDataProvider(): array
+    {
+        $user = User::find(1);
+        $token = JWTAuth::fromUser($user);
+        $normalCase = [
+          "last_name" => "山田",
+          "first_name" => "花子",
+          "last_name_kana" => "やまだ",
+          "first_name_kana" => "花子"
+        ];
+
+        $wrongToken = "hogehogehogehgoehogehogehogehogehogehogehoge";
+        $unAuthlized = [
+            "error" => "Unauthenticated."
+        ];
+
+        return [
+            [$token, $normalCase],
+            [$wrongToken, $unAuthlized]
         ];
     }
 }

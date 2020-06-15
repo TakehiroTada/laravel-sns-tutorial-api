@@ -105,22 +105,34 @@ class AuthController extends Controller
      */
     public function update(Request $request)
     {
-        $user = auth()->user();
-        $user->password = bcrypt($request->account_id);
-        $user->last_name = $request->last_name;
-        $user->first_name = $request->first_name;
-        $user->last_name_kana = $request->last_name_kana;
-        $user->first_name_kana = $request->first_name_kana;
-        $user->update();
-        return response()->json(
-            [
+        try {
+            $user = auth()->user();
+            $user->password = bcrypt($request->account_id);
+            $user->last_name = $request->last_name;
+            $user->first_name = $request->first_name;
+            $user->last_name_kana = $request->last_name_kana;
+            $user->first_name_kana = $request->first_name_kana;
+            $user->update();
+            return response()->json(
+                [
                 'message' => 'User updated successfully',
                 'data' => $user
-            ],
-            201,
-            [],
-            JSON_UNESCAPED_UNICODE
-        );
+                ],
+                200,
+                [],
+                JSON_UNESCAPED_UNICODE
+            );
+        } catch (Exception $e) {
+            return response()->json(
+                [
+                'message' => 'User update failed',
+                ],
+                500,
+                [],
+                JSON_UNESCAPED_UNICODE
+            );
+        }
+
     }
 
     /**
