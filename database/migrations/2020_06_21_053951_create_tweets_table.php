@@ -14,7 +14,8 @@ class CreateTweetsTable extends Migration
     public function up()
     {
         Schema::create(
-            'tweets', function (Blueprint $table) {
+            'tweets',
+            function (Blueprint $table) {
                 $table->increments('id');
                 $table->unsignedInteger('user_id');
 
@@ -22,6 +23,7 @@ class CreateTweetsTable extends Migration
                     ->references('id')
                     ->on('users')
                     ->onDelete('cascade');
+                $table->string('text');
                 $table->timestamps();
             }
         );
