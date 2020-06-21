@@ -12,7 +12,9 @@ class UsersTableSeeder extends Seeder
      */
     public function run()
     {
-         User::truncate();
+        User::unguard();
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        User::truncate();
 
         DB::table('users')->insert(
             [
@@ -27,5 +29,7 @@ class UsersTableSeeder extends Seeder
         );
 
          factory(User::class, 10)->create();
+         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+         User::reguard();
     }
 }

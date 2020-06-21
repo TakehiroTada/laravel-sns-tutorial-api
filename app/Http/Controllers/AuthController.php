@@ -71,7 +71,7 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        $user = new User;
+        $user = new User();
         try {
             $user = User::create($request->all());
 
@@ -132,7 +132,6 @@ class AuthController extends Controller
                 JSON_UNESCAPED_UNICODE
             );
         }
-
     }
 
     /**
